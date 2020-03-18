@@ -79,3 +79,14 @@ class Vector(object):
                 raise Exception("Cannot compute an angle with the zero vector")
             else:
                 raise e
+
+    def parallel_with(self, v):
+        u1 = self.normalized()
+        u2 = v.normalized()
+        if u1.coordinates == u2.coordinates:
+        	return True
+        else:
+        	return False
+
+    def orthogonal_with(self, v):
+        pass
