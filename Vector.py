@@ -1,3 +1,5 @@
+import math
+
 class Vector(object):
     def __init__(self, coordinates):
         try:
@@ -55,15 +57,22 @@ class Vector(object):
             raise TypeError('The coordinates must be iterable')
 
 
-    def dot(self, v):
+    def dot_product(self, v):
         assert self.dimension == v.dimension
         return sum([x*y for x, y in zip(self.coordinates, v.coordinates)])
 
 
-    def theta(self, v):
+    def radians(self, v):
         assert self.dimension == v.dimension
-        pass
+        try:
+            mag1 = self.magnitude()
+            mag2 = v.magnitude()
+            mag_product = mag1*mag2
+            dot_product = self.dot_product(v)
+            return math.acos(dot_product/mag_product)
+        except ZeroDivisionError:
+        	raise TypeError('Vectors must be nonzero')
 
-
-    def rad(self, vector):
-        pass
+    def degrees(self, v):
+        rad = self.radians(v)
+        return (rad*180.)/3.142
