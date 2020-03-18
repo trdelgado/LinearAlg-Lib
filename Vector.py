@@ -75,4 +75,4 @@ class Vector(object):
 
     def degrees(self, v):
         rad = self.radians(v)
-        return (rad*180.)/3.142
+        return (rad*180.)/math.pi
