@@ -80,13 +80,19 @@ class Vector(object):
             else:
                 raise e
 
+
     def parallel_with(self, v):
         u1 = self.normalized()
         u2 = v.normalized()
         if u1.coordinates == u2.coordinates:
-        	return True
+            return True
         else:
-        	return False
+            return False
+
 
     def orthogonal_with(self, v):
-        pass
+        assert(self.dimension == v.dimension)
+        if self.dot(v) == 0:
+            return True
+        else:
+            return False
