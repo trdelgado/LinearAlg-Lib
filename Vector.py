@@ -46,10 +46,24 @@ class Vector(object):
 
 
     def normalized(self):
-    	try:
-        	mag = self.magnitude()
-        	return self.time_scaler(1./mag)
+        try:
+            mag = self.magnitude()
+            return self.time_scaler(1./mag)
         except ZeroDivisonError:
-        	raise Except('Cannot normalize the zero vector')
+            raise Except('Cannot normalize the zero vector')
         except TypeError:
-        	raise TypeError('The coordinates must be iterable')
+            raise TypeError('The coordinates must be iterable')
+
+
+    def dot(self, v):
+        assert self.dimension == v.dimension
+        return sum([x*y for x, y in zip(self.coordinates, v.coordinates)])
+
+
+    def theta(self, v):
+        assert self.dimension == v.dimension
+        pass
+
+
+    def rad(self, vector):
+        pass
