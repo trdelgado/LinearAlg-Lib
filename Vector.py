@@ -6,6 +6,7 @@ getcontext().prec = 30
 class Vector(object):
 
     CANNOT_NORMALIZE_ZERO_VECTOR_MSG = 'Cannot normalize the zero vector'
+    NO_UNIQUE_PARALLEL_COMPONENT_MSG = 'No unique parallel component vector'
 
     def __init__(self, coordinates):
         try:
@@ -100,6 +101,30 @@ class Vector(object):
         return abs(self.dot(v)) < tolerance
 
 
+    def component_parallel_to(self, basis):
+        try:
+          u = basis.normalized()
+          weight = self.dot(u)
+          return u.times_scalar(weight)
+
+        except Exception as e:
+            if str(e) == self.CANNOT_NORMALIZE_ZERO_VECTOR_MSG:
+                raise Exception(self.CANNOT_NORMALIZE_ZERO_VECTOR_MSG)
+            else:
+                raise e
+
+
+    def component_orthogonal_to(self, basis):
+        try:
+            projection = self.component_parallel_to(basis)
+            return self.minus(projection)
+
+        except Exception as e:
+            if str(e) == self.NO_UNIQUE_PARALLEL_COMPONENT_MSG:
+                raise Exception(self.NO_UNIQUE_PARALLEL_COMPONENT_MSG)
+            else:
+                raise e
+
 def test_sets():
     # Test 1: Addition
     v = Vector([8.218,-9.341])
@@ -193,3 +218,31 @@ def test_sets():
     assert(v.is_parallel_to(w) == True)
     assert(v.is_orthogonal_to(w) == True)
     print("Passed test 8: Parallel and Orthogonal Vectors")
+
+    # Test 9: Component Vectors
+    v = Vector([3.039,1.879])
+    w = Vector([0.825,2.036])
+    u = Vector([1.083,2.672])
+    result = v.component_parallel_to(w)
+    result = Vector([round(x,3) for x in result.coordinates])
+    assert(result == u)
+
+    v = Vector([-9.88,-3.264,-8.159])
+    w = Vector([-2.155,-9.353,-9.473])
+    u = Vector([-8.35,3.376,-1.434])
+    result = v.component_orthogonal_to(w)
+    result = Vector([round(x,3) for x in result.coordinates])
+    assert(result == u)
+
+    v = Vector([3.009,-6.172,3.692,-2.51])
+    w = Vector([6.404,-9.144,2.759,8.718])
+    u1 = Vector([1.969,-2.811,0.848,2.680])
+    u2 = Vector([1.040,-3.361,2.844,-5.190])
+    result1 = v.component_parallel_to(w)
+    result1 = Vector([round(x,3) for x in result1.coordinates])
+    result2 = v.component_orthogonal_to(w)
+    result2 = Vector([round(x,3) for x in result2.coordinates])
+    assert(result1 == u1)
+    assert(result2 == u2)
+
+    print("Passed test 9: Component Vectors")
