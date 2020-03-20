@@ -1,4 +1,4 @@
-from math import sqrt, acos, pi
+from math import sqrt, sin, acos, pi
 from decimal import Decimal, getcontext
 
 getcontext().prec = 30
@@ -7,6 +7,7 @@ class Vector(object):
 
     CANNOT_NORMALIZE_ZERO_VECTOR_MSG = 'Cannot normalize the zero vector'
     NO_UNIQUE_PARALLEL_COMPONENT_MSG = 'No unique parallel component vector'
+    ONLY_DEFINED_IN_TWO_THREE_DIMS_MSG = "Only defined in two three dimensions"
 
     def __init__(self, coordinates):
         try:
@@ -124,6 +125,36 @@ class Vector(object):
                 raise Exception(self.NO_UNIQUE_PARALLEL_COMPONENT_MSG)
             else:
                 raise e
+
+
+    def cross(self, v):
+        try:
+            x = (self.coordinates[1]*v.coordinates[2] - v.coordinates[1]*self.coordinates[2])
+            y = -(self.coordinates[0]*v.coordinates[2] - v.coordinates[0]*self.coordinates[2])
+            z = (self.coordinates[0]*v.coordinates[1] - v.coordinates[0]*self.coordinates[1])
+            return Vector([x,y,z])
+
+        except ValueError as e:
+            msg = str(e)
+            if msg == 'need more than 2 values to unpack':
+                self_embedded_in_R3 = Vector(self.coordinates + ('0',))
+                v_embeeded_in_R3 = Vector(v.coordinates + ('0',))
+                return self_embedded_in_R3.cross(v_embeeded_in_R3)
+            elif (msg == 'too many values to unpack' or 
+                  msg == 'need more than 1 value to unpack'):
+                raise Exception(self.ONLY_DEFINED_IN_TWO_THREE_DIMS_MSG)
+            else:
+                raise e
+
+
+    def area_of_parallelogram_with(self, v):
+        cross_product = self.cross(v)
+        return cross_product.magnitude()
+
+
+    def area_of_triangle_with(self, v):
+        return (self.area_of_parallelogram_with(v)/2.0)
+
 
 def test_sets():
     # Test 1: Addition
@@ -246,3 +277,25 @@ def test_sets():
     assert(result2 == u2)
 
     print("Passed test 9: Component Vectors")
+
+    # Test 10: Cross Products, Areas of Parallelograms and Triangles 
+    v = Vector([8.462,7.893,-8.187])
+    w = Vector([6.984,-5.975,4.778])
+    result = v.cross(w)
+    result = Vector([round(x,3) for x in result.coordinates])
+    u = Vector([-11.205,-97.609,-105.685])
+    assert(result == u)
+
+    v = Vector([-8.987,-9.838,5.031])
+    w = Vector([-4.268,-1.861,-8.866])
+    result = round(v.area_of_parallelogram_with(w),3)
+    u = 142.122
+    assert(result == u)
+
+    v = Vector([1.5,9.547,3.691])
+    w = Vector([-6.007,0.124,5.772])
+    result = round(v.area_of_triangle_with(w),3)
+    u = 42.565
+    assert(result == u)
+
+    print("Passed test 10: Cross Products and Areas")
