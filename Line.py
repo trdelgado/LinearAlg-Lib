@@ -98,43 +98,51 @@ class Line(object):
 
 
     def is_parallel_to(self, l):
-        n1 = self.normal_vector.normalized()
-        n2 = l.normal_vector.normalized()
-        if n1 == n2:
-            return True
-        else:
+        n1 = self.normal_vector
+        n2 = l.normal_vector
+        return n1.is_parallel_to(n2)
+
+
+    def __equal__(self, l):
+
+        if self.normal_vector.is_zero():
+            if not l.normal_vector.is_zero():
+                return False
+            else:
+                diff = self.constant_term - l.constant_term
+                return MyDecimal(diff).is_near_zero()
+        elif l.normal_vector.is_zero():
             return False
 
+        if not self.is_parallel_to(l):
+            return False
 
-    def is_equal_to(self, l):
-        if self.is_parallel_to(l):
+        x0 = self.basepoint
+        y0 = l.basepoint
+        basepoint_diff = x0.minus(y0)
+
+        n = self.normal_vector
+        return basepoint_diff.is_orthogonal_to(n)
+
+
+    def intersection_with(self, l):
+        try:
+            A, B = self.normal_vector.coordinates
+            C, D = l.normal_vector.coordinates
             k1 = self.constant_term
-            b1 = self.normal_vector.coordinates[1]
-            p1 = (0,k1/b1)
             k2 = l.constant_term
-            b2 = l.normal_vector.coordinates[1]
-            p2 = (0,k2/b2)
-            if p1 == p2:
-                return True
-        return False
 
+            x_numerator = D*k1 - B*k2
+            y_numerator = -C*k1 + A*k2
+            one_over_denom = Decimal('1')/(A*D - B*C)
 
-    def intersection_to(self, l):
-        if self.is_parallel_to(l):
-            if self.is_equal_to(l):
-                print('L1 is equal to L2')
+            return Vector([x_numerator, y_numerator]).times_scalar(one_over_denom)
+
+        except ZeroDivisionError:
+            if self.__equal__(l):
+                return self
             else:
-                print('L1 and L2 are parallel and have no intersections')
-        else:
-            A = self.normal_vector.coordinates[0]
-            B = self.normal_vector.coordinates[1]
-            C = l.normal_vector.coordinates[0]
-            D = l.normal_vector.coordinates[1]
-            k1 = self.constant_term
-            k2 = l.constant_term
-            x = (D*k1 - B*k2)/(A*D - B*C)
-            y = ((-C*k1) + (A*k2))/(A*D - B*C)
-            print("Intersection: ({},{})".format(x, y))
+                return None
 
 
 class MyDecimal(Decimal):
