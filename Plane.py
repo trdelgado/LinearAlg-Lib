@@ -97,6 +97,34 @@ class Plane(object):
         raise Exception(Plane.NO_NONZERO_ELTS_FOUND_MSG)
 
 
+    def is_parallel_to(self, p):
+        n1 = self.normal_vector
+        n2 = p.normal_vector
+        return n1.is_parallel_to(n2)
+
+
+    def __equal__(self, p):
+
+        if self.normal_vector.is_zero():
+            if not l.normal_vector.is_zero():
+                return False
+            else:
+                diff = self.constant_term - p.constant_term
+                return MyDecimal(diff).is_near_zero()
+        elif p.normal_vector.is_zero():
+            return False
+
+        if not self.is_parallel_to(p):
+            return False
+
+        x0 = self.basepoint
+        y0 = p.basepoint
+        basepoint_diff = x0.minus(y0)
+
+        n = self.normal_vector
+        return basepoint_diff.is_orthogonal_to(n)
+
+
 class MyDecimal(Decimal):
     def is_near_zero(self, eps=1e-10):
         return abs(self) < eps
