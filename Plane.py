@@ -1,6 +1,6 @@
 from decimal import Decimal, getcontext
 
-from vector import Vector
+from Vector import Vector
 
 getcontext().prec = 30
 
@@ -14,8 +14,8 @@ class Plane(object):
 
         if not normal_vector:
             all_zeros = ['0']*self.dimension
-            normal_vector = Vector(all_zeros)
-        self.normal_vector = normal_vector
+            normal_vector = all_zeros
+        self.normal_vector = Vector(normal_vector)
 
         if not constant_term:
             constant_term = Decimal('0')
@@ -26,7 +26,7 @@ class Plane(object):
 
     def set_basepoint(self):
         try:
-            n = self.normal_vector
+            n = self.normal_vector.coordinates
             c = self.constant_term
             basepoint_coords = ['0']*self.dimension
 
@@ -67,7 +67,7 @@ class Plane(object):
 
             return output
 
-        n = self.normal_vector
+        n = self.normal_vector.coordinates
 
         try:
             initial_index = Plane.first_nonzero_index(n)
@@ -106,7 +106,7 @@ class Plane(object):
     def __equal__(self, p):
 
         if self.normal_vector.is_zero():
-            if not l.normal_vector.is_zero():
+            if not p.normal_vector.is_zero():
                 return False
             else:
                 diff = self.constant_term - p.constant_term

@@ -91,11 +91,11 @@ class Vector(object):
         return self.magnitude() < tolerance
 
 
-    def is_parallel_to(self, v):
+    def is_parallel_to(self, v, tolerance=1e-5):
         return (self.is_zero()
             or v.is_zero()
-            or (self.angle_with(v) == 0)
-            or (self.angle_with(v) == pi))
+            or (abs(self.angle_with(v)) < tolerance)
+            or (abs(self.angle_with(v) - pi) < tolerance))
 
 
     def is_orthogonal_to(self, v, tolerance=1e-10):
