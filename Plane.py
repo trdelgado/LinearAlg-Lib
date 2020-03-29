@@ -15,7 +15,11 @@ class Plane(object):
         if not normal_vector:
             all_zeros = ['0']*self.dimension
             normal_vector = all_zeros
-        self.normal_vector = Vector(normal_vector)
+
+        if type(normal_vector) == list:
+            self.normal_vector = Vector(normal_vector)
+        else:
+            self.normal_vector = normal_vector
 
         if not constant_term:
             constant_term = Decimal('0')
@@ -103,7 +107,7 @@ class Plane(object):
         return n1.is_parallel_to(n2)
 
 
-    def __equal__(self, p):
+    def __eq__(self, p):
 
         if self.normal_vector.is_zero():
             if not p.normal_vector.is_zero():
@@ -120,7 +124,6 @@ class Plane(object):
         x0 = self.basepoint
         y0 = p.basepoint
         basepoint_diff = x0.minus(y0)
-
         n = self.normal_vector
         return basepoint_diff.is_orthogonal_to(n)
 
