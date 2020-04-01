@@ -63,9 +63,6 @@ class LinearSystem(object):
     def compute_triangular_form(self):
         system = deepcopy(self)
 
-        print("========================================================")
-        print(system)
-
         # For col in columns perform row reduction
         cols = min(system.dimension, len(system.planes))
         for i in range(cols):
@@ -73,10 +70,6 @@ class LinearSystem(object):
             # Identify how many leading zeros the row i has
             pi = system.planes[i].normal_vector.coordinates
             leading_zeros_i = system.leading_zeros(pi)
-
-            print("i: {}".format(i))
-            print("Plane {}: {}".format(i, pi))
-            print("leading zeros: {}".format(leading_zeros_i))
 
             # If leading zeros does not match index i search for a row that does
             if leading_zeros_i != i:
@@ -88,18 +81,12 @@ class LinearSystem(object):
                     pj = system.planes[j].normal_vector.coordinates
                     leading_zeros_j = system.leading_zeros(pj)
 
-                    print("j: {}".format(j))
-                    print("leading zeros: {}".format(leading_zeros_j))
-
                     # If leading zeros match index i
                     if leading_zeros_j == i:
 
                         # Swap row i and j so leading zeros match i
                         system.swap_rows(i, j)
 
-                        print("Swaping row {} and row {}".format(i,j))
-                        print(system)
-                        print("-------------------------------------------------")
                         break
 
             # For each row above i perform row reduction
@@ -109,22 +96,15 @@ class LinearSystem(object):
                 cji = system.planes[j].normal_vector.coordinates[i]
                 cii = system.planes[i].normal_vector.coordinates[i]
 
-                print("j: {}".format(j))
-                print("Cji: {}, Cii: {}".format(cji,cii))
-
                 if abs(cii) < 1e-10:
-                    print('something wrong')
+                    print('Cii should not have a value of near zero')
                     break
 
                 c = -cji/cii
 
                 # Add row i times a multiple to reduce row j
                 system.add_multiple_times_row_to_row(c, i, j)
-                print("{} x row {} + row {} = {}".format(c, i, j, system.planes[j]))
-                print(system)
-                print("-------------------------------------------------")
 
-        print("========================================================\n")
         return system
 
 
