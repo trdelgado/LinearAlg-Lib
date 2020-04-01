@@ -51,6 +51,83 @@ class LinearSystem(object):
         self[row_to_be_added_to] = Plane(normal_vector=new_normal_vector, constant_term=new_constant_term)
 
 
+    def leading_zeros(self, array, tolerance=1e-5):
+        count = 0
+        for i in range(len(array)):
+            if abs(array[i]) > tolerance:
+                break
+            count += 1
+        return count
+
+
+    def compute_triangular_form(self):
+        system = deepcopy(self)
+
+        print("========================================================")
+        print(system)
+
+        # For col in columns perform row reduction
+        cols = min(system.dimension, len(system.planes))
+        for i in range(cols):
+
+            # Identify how many leading zeros the row i has
+            pi = system.planes[i].normal_vector.coordinates
+            leading_zeros_i = system.leading_zeros(pi)
+
+            print("i: {}".format(i))
+            print("Plane {}: {}".format(i, pi))
+            print("leading zeros: {}".format(leading_zeros_i))
+
+            # If leading zeros does not match index i search for a row that does
+            if leading_zeros_i != i:
+
+                # For row j in planes
+                for j in range(i+1, len(system.planes)):
+
+                    # Find number of leading zeros for each row
+                    pj = system.planes[j].normal_vector.coordinates
+                    leading_zeros_j = system.leading_zeros(pj)
+
+                    print("j: {}".format(j))
+                    print("leading zeros: {}".format(leading_zeros_j))
+
+                    # If leading zeros match index i
+                    if leading_zeros_j == i:
+
+                        # Swap row i and j so leading zeros match i
+                        system.swap_rows(i, j)
+
+                        print("Swaping row {} and row {}".format(i,j))
+                        print(system)
+                        print("-------------------------------------------------")
+                        break
+
+            # For each row above i perform row reduction
+            for j in range(i+1, len(system.planes)):
+
+                # Calculate recipical equation to eliminate variable i for each row
+                cji = system.planes[j].normal_vector.coordinates[i]
+                cii = system.planes[i].normal_vector.coordinates[i]
+
+                print("j: {}".format(j))
+                print("Cji: {}, Cii: {}".format(cji,cii))
+
+                if abs(cii) < 1e-10:
+                    print('something wrong')
+                    break
+
+                c = -cji/cii
+
+                # Add row i times a multiple to reduce row j
+                system.add_multiple_times_row_to_row(c, i, j)
+                print("{} x row {} + row {} = {}".format(c, i, j, system.planes[j]))
+                print(system)
+                print("-------------------------------------------------")
+
+        print("========================================================\n")
+        return system
+
+
     def indices_of_first_nonzero_terms_in_each_row(self):
         num_equations = len(self)
         num_variables = self.dimension
@@ -98,7 +175,7 @@ class MyDecimal(Decimal):
         return abs(self) < eps
 
 
-def test_sets():
+def test_set1():
     p0 = Plane(normal_vector=Vector(['1','1','1']), constant_term='1')
     p1 = Plane(normal_vector=Vector(['0','1','0']), constant_term='2')
     p2 = Plane(normal_vector=Vector(['1','1','-1']), constant_term='3')
@@ -157,3 +234,43 @@ def test_sets():
             s[2] == Plane(normal_vector=Vector(['-1','-1','1']), constant_term='-3') and
             s[3] == p3):
         print('test case 9 failed')
+
+def test_set2():
+    p1 = Plane(normal_vector=Vector(['1','1','1']), constant_term='1')
+    p2 = Plane(normal_vector=Vector(['0','1','1']), constant_term='2')
+    s = LinearSystem([p1,p2])
+    t = s.compute_triangular_form()
+    if not (t[0] == p1 and
+            t[1] == p2):
+        print('test case 1 failed')
+        print(t)
+
+    p1 = Plane(normal_vector=Vector(['1','1','1']), constant_term='1')
+    p2 = Plane(normal_vector=Vector(['1','1','1']), constant_term='2')
+    s = LinearSystem([p1,p2])
+    t = s.compute_triangular_form()
+    if not (t[0] == p1 and
+            t[1] == Plane(constant_term='1')):
+        print('test case 2 failed')
+
+    p1 = Plane(normal_vector=Vector(['1','1','1']), constant_term='1')
+    p2 = Plane(normal_vector=Vector(['0','1','0']), constant_term='2')
+    p3 = Plane(normal_vector=Vector(['1','1','-1']), constant_term='3')
+    p4 = Plane(normal_vector=Vector(['1','0','-2']), constant_term='2')
+    s = LinearSystem([p1,p2,p3,p4])
+    t = s.compute_triangular_form()
+    if not (t[0] == p1 and
+            t[1] == p2 and
+            t[2] == Plane(normal_vector=Vector(['0','0','-2']), constant_term='2') and
+            t[3] == Plane()):
+        print('test case 3 failed')
+
+    p1 = Plane(normal_vector=Vector(['0','1','1']), constant_term='1')
+    p2 = Plane(normal_vector=Vector(['1','-1','1']), constant_term='2')
+    p3 = Plane(normal_vector=Vector(['1','2','-5']), constant_term='3')
+    s = LinearSystem([p1,p2,p3])
+    t = s.compute_triangular_form()
+    if not (t[0] == Plane(normal_vector=Vector(['1','-1','1']), constant_term='2') and
+            t[1] == Plane(normal_vector=Vector(['0','1','1']), constant_term='1') and
+            t[2] == Plane(normal_vector=Vector(['0','0','-9']), constant_term='-2')):
+        print('test case 4 failed')
