@@ -51,59 +51,59 @@ class LinearSystem(object):
         self[row_to_be_added_to] = Plane(normal_vector=new_normal_vector, constant_term=new_constant_term)
 
 
-    def leading_zeros(self, array, tolerance=1e-5):
-        count = 0
-        for i in range(len(array)):
-            if abs(array[i]) > tolerance:
-                break
-            count += 1
-        return count
+    def swap_row_below_for_nonzero_coef(self, row, col):
+        num_equations = len(self)
+
+        # For each row above i
+        for k in range(row+1, num_equations):
+
+            # If there's a row under row i with nonzero ceoff for var j
+            coefficient = MyDecimal(self[k].normal_vector.coordinates[col])
+
+            # If leading zeros match index i
+            if not coefficient.is_near_zero():
+
+                # Swap row i and j so leading zeros match i
+                self.swap_rows(row, k)
+                return True
+
+        return False
+
+
+    def clear_coefficients_below(self, row, col):
+        num_equations = len(self)
+        beta = MyDecimal(self[row].normal_vector.coordinates[col])
+
+        for k in range(row+1, num_equations):
+            n = self[k].normal_vector
+            gamma = n.coordinates[col]
+            alpha = -gamma/beta
+            self.add_multiple_times_row_to_row(alpha, row, k)
 
 
     def compute_triangular_form(self):
         system = deepcopy(self)
 
-        # For col in columns perform row reduction
-        cols = min(system.dimension, len(system.planes))
-        for i in range(cols):
+        num_equations = len(system)
+        num_variables = system.dimension
+        j = 0
 
-            # Identify how many leading zeros the row i has
-            pi = system.planes[i].normal_vector.coordinates
-            leading_zeros_i = system.leading_zeros(pi)
+        # For each row 
+        for i in range(num_equations):
 
-            # If leading zeros does not match index i search for a row that does
-            if leading_zeros_i != i:
+            while j < num_variables:
+                c = MyDecimal(system[i].normal_vector.coordinates[j])
+                if c.is_near_zero():
+                    swap_succeeded = system.swap_row_below_for_nonzero_coef(i, j)
 
-                # For row j in planes
-                for j in range(i+1, len(system.planes)):
+                    if not swap_succeeded:
+                        j += 1
+                        continue
 
-                    # Find number of leading zeros for each row
-                    pj = system.planes[j].normal_vector.coordinates
-                    leading_zeros_j = system.leading_zeros(pj)
-
-                    # If leading zeros match index i
-                    if leading_zeros_j == i:
-
-                        # Swap row i and j so leading zeros match i
-                        system.swap_rows(i, j)
-
-                        break
-
-            # For each row above i perform row reduction
-            for j in range(i+1, len(system.planes)):
-
-                # Calculate recipical equation to eliminate variable i for each row
-                cji = system.planes[j].normal_vector.coordinates[i]
-                cii = system.planes[i].normal_vector.coordinates[i]
-
-                if abs(cii) < 1e-10:
-                    print('Cii should not have a value of near zero')
-                    break
-
-                c = -cji/cii
-
-                # Add row i times a multiple to reduce row j
-                system.add_multiple_times_row_to_row(c, i, j)
+                # Clear all rows below of variable i
+                system.clear_coefficients_below(i, j)
+                j += 1
+                break
 
         return system
 
