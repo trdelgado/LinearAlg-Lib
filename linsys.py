@@ -108,40 +108,38 @@ class LinearSystem(object):
         return system
 
 
+    def scale_row_ceof_one(self, row, col):
+        n = self[row].normal_vector.coordinates
+        beta = Decimal('1.0')/n[col]
+        self.multiply_coefficient_and_row(beta, row)
+
+
+    def clear_coefficients_above(self, row, col):
+        for k in range(row)[::-1]:
+            n = self[k].normal_vector.coordinates
+            alpha = -(n[col])
+            self.add_multiple_times_row_to_row(alpha, row, k)
+
+
     def compute_rref(self):
         tf = self.compute_triangular_form()
+
         num_equations = len(tf)
-        num_variables = tf.dimension
+        pivot_indices = tf.indices_of_first_nonzero_terms_in_each_row()
 
         # From last row to first row
-        for i in range(num_equations-1, -1, -1):
+        for i in range(num_equations)[::-1]:
 
             # Get leading coefficient
-            j = -1
-            p = tf.planes[i].normal_vector.coordinates
+            j = pivot_indices[i]
+            if j < 0:
+                continue
+            
+            # Rescale row to equal 1
+            tf.scale_row_ceof_one(i, j)
 
-            for k, item in enumerate(p):
-                if not MyDecimal(item).is_near_zero():
-                    j = k
-                    break
-
-            if j != -1:
-
-                # Find beta: reciprocal of coefficient
-                ceof = tf[i].normal_vector.coordinates[j]
-                recp_ceof = MyDecimal(1/ceof)
-
-                # Multiply row by coefficient
-                tf.multiply_coefficient_and_row(recp_ceof, i)
-
-                # For each row above current row
-                for k in range(i-1, -1, -1):
-
-                    # Find the reciprocal of the coefficient i of current row
-                    alpha = -tf[k].normal_vector.coordinates[j]
-
-                    # Add negative multiply reciprocal to current row
-                    tf.add_multiple_times_row_to_row(alpha, i, k)
+            # Loop through each row to remove coefficient 
+            tf.clear_coefficients_above(i, j)
 
         return tf
 
