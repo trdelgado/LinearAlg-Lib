@@ -161,46 +161,49 @@ class LinearSystem(object):
         return indices
 
 
-    def linsys_sol(self):
-        rref = self.compute_rref()
-        num_equations = len(self)
-        num_variables = self.dimension
-        first_nonzero = rref.indices_of_first_nonzero_terms_in_each_row()
+    def compute_solution(self):
+        try:
+            return self.gaussian_elimination_sol()
 
-        solution = []
-        print(rref)
-
-        # For each variable: loop through each column
-        for i in range(num_equations):
-            print("i: {}".format(i))
-            # Determine number of nonzero coefficients
-            #if first_nonzero[i] == i:
-            num_vars = 0
-            print("Plane: {}: {}".format(i, rref.planes[i].normal_vector.coordinates))
-            for j in range(len(rref.planes[i].normal_vector.coordinates)):
-                print("  j: {}".format(j))
-                if abs(rref.planes[i].normal_vector.coordinates[j]) > 0:
-                    num_vars += 1
-            print("Num of variables counted: {}".format(num_vars))
-            # If one nonzero at pivot index
-            if num_vars == 1:
-                # assign variable to k
-                solution.append(rref.planes[i].constant_term)
-
-            elif num_vars > 1:
-                return "More than one solution."
-
-            # If no nonzero and k is nonzero
+        except Exception as e:
+            if (str(e) == self.NO_SOLUTIONS_MSG or str(e) == self.INF_SOLUTIONS_MSG):
+                return str(e)
             else:
-                if abs(rref.planes[i].constant_term) > 1e-10:
-                    print("Num Vars: {}, Plane: {}, Constant Term: {}".format(num_vars, rref.planes[i], rref.planes[i].constant_term))
-                    return "Solution does not exist"
+                raise e
 
-        if len(solution) != num_variables:
-            print("Solution: {}, num_variables: {}".format(solution, num_variables))
-            return "More than one solution."
-        else:
-            return solution
+    
+    def gaussian_elimination_sol(self):
+        rref = self.compute_rref()
+        rref.raise_exception_if_contradictory_equation()
+        rref.raise_exception_if_too_few_pivots()
+
+        num_variables = rref.dimension
+        solution_coordinates = [rref.planes[i].constant_term for i in range(num_variables)]
+
+        return Vector(solution_coordinates)
+
+
+    def raise_exception_if_contradictory_equation(self):
+        for p in self.planes:
+            try:
+                p.first_nonzero_index(p.normal_vector.coordinates)
+
+            except Exception as e:
+                if str(e) == "No nonzero elements found":
+                    constant_term = MyDecimal(p.constant_term)
+                    if not constant_term.is_near_zero():
+                        raise Exception(self.NO_SOLUTIONS_MSG)
+                else:
+                    raise e
+
+
+    def raise_exception_if_too_few_pivots(self):
+        pivot_indices = self.indices_of_first_nonzero_terms_in_each_row()
+        num_pivots = sum([1 if index >= 0 else 0 for index in pivot_indices])
+        num_variables = self.dimension
+
+        if num_pivots < num_variables:
+            raise Exception(self.INF_SOLUTIONS_MSG)
 
 
     def __len__(self):
