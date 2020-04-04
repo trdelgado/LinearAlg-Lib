@@ -161,6 +161,48 @@ class LinearSystem(object):
         return indices
 
 
+    def linsys_sol(self):
+        rref = self.compute_rref()
+        num_equations = len(self)
+        num_variables = self.dimension
+        first_nonzero = rref.indices_of_first_nonzero_terms_in_each_row()
+
+        solution = []
+        print(rref)
+
+        # For each variable: loop through each column
+        for i in range(num_equations):
+            print("i: {}".format(i))
+            # Determine number of nonzero coefficients
+            #if first_nonzero[i] == i:
+            num_vars = 0
+            print("Plane: {}: {}".format(i, rref.planes[i].normal_vector.coordinates))
+            for j in range(len(rref.planes[i].normal_vector.coordinates)):
+                print("  j: {}".format(j))
+                if abs(rref.planes[i].normal_vector.coordinates[j]) > 0:
+                    num_vars += 1
+            print("Num of variables counted: {}".format(num_vars))
+            # If one nonzero at pivot index
+            if num_vars == 1:
+                # assign variable to k
+                solution.append(rref.planes[i].constant_term)
+
+            elif num_vars > 1:
+                return "More than one solution."
+
+            # If no nonzero and k is nonzero
+            else:
+                if abs(rref.planes[i].constant_term) > 1e-10:
+                    print("Num Vars: {}, Plane: {}, Constant Term: {}".format(num_vars, rref.planes[i], rref.planes[i].constant_term))
+                    return "Solution does not exist"
+
+        if len(solution) != num_variables:
+            print("Solution: {}, num_variables: {}".format(solution, num_variables))
+            return "More than one solution."
+        else:
+            return solution
+
+
     def __len__(self):
         return len(self.planes)
 
