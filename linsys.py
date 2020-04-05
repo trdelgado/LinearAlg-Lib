@@ -1,11 +1,36 @@
 from decimal import Decimal, getcontext
 from copy import deepcopy
-
 from Vector import Vector
 from Plane import Plane
 
 getcontext().prec = 30
 
+
+class Parametrization(object):
+    BASEPT_AND_DIR_VECTORS_MUST_BE_IN_SAME_DIM_MSG = ('The basepoint and direction vectors should all live in the same dimension')
+
+    def __init__(self, basepoint, direction_vectors):
+        self.basepoint = basepoint
+        self.direction_vectors = direction_vectors
+        self.dimension = self.basepoint.dimension
+
+        try:
+            for v in direction_vectors:
+                assert v.dimension == self.dimension
+
+        except AssertionError:
+            raise Exception(BASEPT_AND_DIR_VECTORS_MUST_BE_IN_SAME_DIM_MSG)
+
+    def __str__(self):
+        output = ''
+        for coord in range(self.dimension):
+            output += 'x_{} = {} '.format(coord + 1,
+                                          round(self.basepoint.coordinates[coord], 3))
+            for free_var, vector in enumerate(self.direction_vectors):
+                output += '+ {} t_{}'.format(round(vector.coordinates[coord], 3),
+                                             free_var + 1)
+            output += '\n'
+        return output
 
 class LinearSystem(object):
 
@@ -163,24 +188,69 @@ class LinearSystem(object):
 
     def compute_solution(self):
         try:
-            return self.gaussian_elimination_sol()
+            return self.gaussian_elimination_and_param_sol()
 
         except Exception as e:
-            if (str(e) == self.NO_SOLUTIONS_MSG or str(e) == self.INF_SOLUTIONS_MSG):
+            if str(e) == self.NO_SOLUTIONS_MSG:
                 return str(e)
             else:
                 raise e
 
-    
-    def gaussian_elimination_sol(self):
+
+    def gaussian_elimination_and_param_sol(self):
         rref = self.compute_rref()
         rref.raise_exception_if_contradictory_equation()
-        rref.raise_exception_if_too_few_pivots()
 
-        num_variables = rref.dimension
-        solution_coordinates = [rref.planes[i].constant_term for i in range(num_variables)]
+        direction_vectors = rref.extract_direction_vectors()
+        basepoint = rref.extract_basepoint()
 
-        return Vector(solution_coordinates)
+        return Parametrization(basepoint, direction_vectors)
+
+
+    def extract_direction_vectors(self):
+        num_variables = self.dimension
+        pivot_indices = self.indices_of_first_nonzero_terms_in_each_row()
+
+        # Determine each free variable by determine which are not pivot variables
+        free_variable_indices = set(range(num_variables)) - set(pivot_indices)
+        direction_vectors = []
+
+        # For each free variable create a directional vector
+        for free_var in free_variable_indices:
+            vector_coords = [0] * num_variables
+            vector_coords[free_var] = 1
+
+            # For each equation in the system
+            for index, plane in enumerate(self.planes):
+
+                # Determine pivot variable
+                pivot_var = pivot_indices[index]
+                if pivot_var < 0:
+                    break
+
+                # Find the coefficient of the free variable
+                # Set coordinate cooresponding to pivot variable to negative of coefficient
+                vector_coords[pivot_var] = -plane.normal_vector.coordinates[free_var]
+
+            direction_vectors.append(Vector(vector_coords))
+
+        return direction_vectors
+
+
+    def extract_basepoint(self):
+        num_variables = self.dimension
+        pivot_indices = self.indices_of_first_nonzero_terms_in_each_row()
+
+        basepoint_coords = [0] * num_variables
+
+        # Loop through pivot variables
+        for index, plane in enumerate(self.planes):
+            pivot_var = pivot_indices[index]
+            if pivot_var < 0:
+                break
+            basepoint_coords[pivot_var] = plane.constant_term
+
+        return Vector(basepoint_coords)
 
 
     def raise_exception_if_contradictory_equation(self):
